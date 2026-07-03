@@ -1,0 +1,32 @@
+# Multi-label classifier training configuration
+seed: 42
+backbone: resnet18        # resnet18 | efficientnet_b0
+pretrained: true
+dropout: 0.2
+
+image_size: 224
+batch_size: 32
+epochs: 20
+lr: 0.0003
+weight_decay: 0.0001
+val_split: 0.15
+threshold: 0.5            # sigmoid decision threshold at eval/inference
+num_workers: 2
+device: auto
+use_pos_weight: true      # BCEWithLogitsLoss pos_weight from label frequencies
+horizontal_flip_prob: 0.5 # flip swaps left/right hand labels automatically
+
+annotations_path: dataset/annotations.json
+checkpoint_dir: model/checkpoints
+log_path: model/training_log.json
+
+# Person detection + cropping (feeds the training dataset)
+yolo:
+  weights: yolov8n.pt
+  conf: 0.35
+crop:
+  input_annotations: dataset/augmented_annotations.json
+  output_dir: dataset/cropped
+  expand: 0.2             # 20% bounding-box expansion
+  target_size: 224
+  fallback_full_image: true

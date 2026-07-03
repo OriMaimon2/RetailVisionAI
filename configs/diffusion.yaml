@@ -1,0 +1,30 @@
+# Synthetic data generation configuration
+# backend: sd (local Stable Diffusion) | openai | gemini | mock (procedural, no GPU)
+backend: sd
+model_id: stabilityai/stable-diffusion-xl-base-1.0
+fallback_model_id: runwayml/stable-diffusion-v1-5
+offline: false          # true -> diffusers local_files_only (fully offline)
+device: auto            # auto | cuda | cpu | mps
+height: 768
+width: 768
+num_inference_steps: 30
+guidance_scale: 6.5
+
+# Reproducibility + volume
+seed: 42
+images_per_label: 100   # minimum required per label
+
+# API fallback models (used only when backend is openai / gemini)
+openai_model: gpt-image-1
+gemini_model: imagen-3.0-generate-002
+
+output_dir: dataset/synthetic_raw
+annotations_path: dataset/synthetic_annotations.json
+
+augmentation:
+  variants_per_image: 2
+  severity: medium              # light | medium | heavy
+  fisheye_probability: 0.35
+  timestamp_probability: 0.9
+  output_dir: dataset/augmented
+  annotations_path: dataset/augmented_annotations.json
