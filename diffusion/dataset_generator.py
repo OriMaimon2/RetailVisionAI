@@ -39,6 +39,7 @@ def create_runner(backend: str, config: dict):
             guidance_scale=config.get("guidance_scale", 6.5),
             height=config.get("height", 768),
             width=config.get("width", 768),
+            low_vram=config.get("low_vram", True),
         )
     if backend == "openai":
         from diffusion.openai_api import OpenAIImageRunner
@@ -123,6 +124,7 @@ class DatasetGenerator:
 
                 if (i + 1) % 20 == 0:
                     save_json(annotations, self.annotations_path)
+                    self._release_memory()
 
         save_json(annotations, self.annotations_path)
         logger.info(
@@ -131,6 +133,21 @@ class DatasetGenerator:
             self.annotations_path,
         )
         return annotations
+
+    @staticmethod
+    def _release_memory():
+        """Periodic cleanup during long generation runs (1000+ diffusion
+        calls) to prevent CPU/GPU memory fragmentation from creeping up."""
+        import gc
+
+        gc.collect()
+        try:
+            import torch
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except ImportError:
+            pass
 
 
 def main():

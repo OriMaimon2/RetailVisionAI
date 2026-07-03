@@ -1,14 +1,21 @@
 # Synthetic data generation configuration
 # backend: sd (local Stable Diffusion) | openai | gemini | mock (procedural, no GPU)
 backend: sd
-model_id: stabilityai/stable-diffusion-xl-base-1.0
+# SD 1.5 is the default: ~2GB fp16 weights fits comfortably in free-tier
+# Colab RAM (~12.7GB). Swap to "stabilityai/stable-diffusion-xl-base-1.0"
+# (and height/width: 768) for higher quality on an A100/high-RAM runtime.
+model_id: runwayml/stable-diffusion-v1-5
 fallback_model_id: runwayml/stable-diffusion-v1-5
 offline: false          # true -> diffusers local_files_only (fully offline)
 device: auto            # auto | cuda | cpu | mps
-height: 768
-width: 768
+height: 512
+width: 512
 num_inference_steps: 30
 guidance_scale: 6.5
+# Loads the pipeline with enable_model_cpu_offload() instead of a blanket
+# .to("cuda"): keeps only the active submodule on GPU, cutting both GPU and
+# peak system RAM. Turn off only if you have ample VRAM and want max speed.
+low_vram: true
 
 # Reproducibility + volume
 seed: 42

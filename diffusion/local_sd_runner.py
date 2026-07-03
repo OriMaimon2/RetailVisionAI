@@ -35,6 +35,7 @@ class LocalSDRunner:
         guidance_scale: float = 6.5,
         height: int = 768,
         width: int = 768,
+        low_vram: bool = True,
     ):
         import torch
         from diffusers import AutoPipelineForText2Image
@@ -50,19 +51,43 @@ class LocalSDRunner:
             "torch_dtype": dtype,
             "local_files_only": offline,
             "use_safetensors": True,
+            # Without low_cpu_mem_usage, from_pretrained materializes weights
+            # then casts dtype, needing fp32+fp16 buffers simultaneously.
+            "low_cpu_mem_usage": True,
         }
+
+        def _load(repo_id):
+            # variant="fp16" fetches the half-precision weight files directly
+            # instead of the ~2x larger fp32 checkpoint (the actual cause of
+            # the Colab RAM crash: SDXL fp32 weights are ~14GB on CPU before
+            # any cast happens).
+            if dtype == torch.float16:
+                try:
+                    return AutoPipelineForText2Image.from_pretrained(repo_id, variant="fp16", **load_kwargs)
+                except Exception as exc:
+                    logger.warning("No cached fp16 variant for %s (%s); loading default weights", repo_id, exc)
+            return AutoPipelineForText2Image.from_pretrained(repo_id, **load_kwargs)
+
         try:
-            logger.info("Loading diffusion model: %s (device=%s)", model_id, self.device)
-            self.pipeline = AutoPipelineForText2Image.from_pretrained(model_id, **load_kwargs)
+            logger.info("Loading diffusion model: %s (device=%s, dtype=%s)", model_id, self.device, dtype)
+            self.pipeline = _load(model_id)
             self.model_id = model_id
         except Exception as exc:  # e.g. SDXL not cached / not enough disk
             logger.warning("Failed to load %s (%s); trying fallback %s", model_id, exc, fallback_model_id)
-            self.pipeline = AutoPipelineForText2Image.from_pretrained(fallback_model_id, **load_kwargs)
+            self.pipeline = _load(fallback_model_id)
             self.model_id = fallback_model_id
 
-        self.pipeline = self.pipeline.to(self.device)
+        if self.device == "cuda" and low_vram:
+            # Keeps only the submodule currently in use on the GPU and the
+            # rest on CPU, cutting both GPU and peak system RAM versus a
+            # blanket .to("cuda"). Requires `accelerate` (already a dependency).
+            self.pipeline.enable_model_cpu_offload()
+        else:
+            self.pipeline = self.pipeline.to(self.device)
+
         if self.device == "cuda":
             self.pipeline.enable_attention_slicing()
+            self.pipeline.enable_vae_slicing()
 
     def generate(self, prompt: str, negative_prompt: str = "", seed: int = 0) -> Image.Image:
         import torch
