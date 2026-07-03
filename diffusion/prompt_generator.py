@@ -148,8 +148,12 @@ MUTUAL_EXCLUSIONS = [
 class PromptGenerator:
     """Reproducible prompt + ground-truth generator for a given seed."""
 
-    def __init__(self, seed: int = 42):
+    def __init__(self, seed: int = 42, base_prompt: str = None, negative_prompt: str = None):
         self.rng = random.Random(seed)
+        # Callers (CLI config, notebook) may override the scene-level base
+        # and negative prompt; label fragments/diversity axes stay fixed.
+        self.base_prompt = base_prompt or BASE_PROMPT
+        self.negative_prompt = negative_prompt or NEGATIVE_PROMPT
 
     def _sample_co_labels(self, primary_label: str, labels: dict) -> list:
         cues = []
@@ -189,7 +193,7 @@ class PromptGenerator:
         co_cues = self._sample_co_labels(primary_label, labels)
 
         parts = [
-            BASE_PROMPT,
+            self.base_prompt,
             LABEL_SPECS[primary_label]["fragment"],
             attributes["clothing"],
         ]
@@ -206,7 +210,7 @@ class PromptGenerator:
 
         return {
             "prompt": ", ".join(parts),
-            "negative_prompt": NEGATIVE_PROMPT,
+            "negative_prompt": self.negative_prompt,
             "labels": labels,
             "primary_label": primary_label,
             "attributes": attributes,

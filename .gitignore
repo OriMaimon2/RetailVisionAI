@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+*.pt
+yolov8n.pt
+dataset/synthetic_raw/*
+dataset/augmented/*
+dataset/cropped/*
+!dataset/synthetic_raw/.gitkeep
+!dataset/augmented/.gitkeep
+!dataset/cropped/.gitkeep
+model/checkpoints/
+model/training_log.json
+configs/diffusion_colab.yaml

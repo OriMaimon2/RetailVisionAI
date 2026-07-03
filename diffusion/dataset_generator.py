@@ -44,7 +44,11 @@ def create_runner(backend: str, config: dict):
     if backend == "openai":
         from diffusion.openai_api import OpenAIImageRunner
 
-        return OpenAIImageRunner(model=config.get("openai_model", "gpt-image-1"))
+        return OpenAIImageRunner(
+            model=config.get("openai_model", "gpt-image-1"),
+            size=config.get("openai_size", "1024x1024"),
+            api_key=config.get("openai_api_key"),  # falls back to OPENAI_API_KEY env var
+        )
     if backend == "gemini":
         from diffusion.gemini_api import GeminiImageRunner
 
@@ -73,7 +77,11 @@ class DatasetGenerator:
         )
         self.backend_name = config.get("backend", "sd")
         self.runner = create_runner(self.backend_name, config)
-        self.prompt_generator = PromptGenerator(seed=self.base_seed)
+        self.prompt_generator = PromptGenerator(
+            seed=self.base_seed,
+            base_prompt=config.get("base_prompt"),
+            negative_prompt=config.get("negative_prompt"),
+        )
 
     def run(self) -> list:
         annotations = []

@@ -23,7 +23,23 @@ images_per_label: 100   # minimum required per label
 
 # API fallback models (used only when backend is openai / gemini)
 openai_model: gpt-image-1
+openai_size: 1024x1024   # OpenAI Images API canvas size
 gemini_model: imagen-3.0-generate-002
+# openai_api_key / GEMINI_API_KEY: set via environment variable, not here —
+# keep secrets out of the config file. OPENAI_API_KEY / GEMINI_API_KEY (or
+# GOOGLE_API_KEY) are read automatically if openai_api_key is left unset.
+
+# Optional overrides for the scene-level prompt. Leave unset to use the
+# defaults in diffusion/prompt_generator.py (BASE_PROMPT / NEGATIVE_PROMPT).
+# Per-label fragments and diversity axes (lighting, angle, crowd, ...) are
+# always appended after base_prompt and are not overridable here.
+# base_prompt: >
+#   CCTV footage inside a supermarket, wide-angle security camera,
+#   grainy low resolution, realistic lighting, aisles with products,
+#   people shopping, surveillance camera perspective
+# negative_prompt: >
+#   cartoon, illustration, anime, painting, drawing, 3d render, cgi,
+#   text overlay, watermark, logo, deformed hands, extra fingers
 
 output_dir: dataset/synthetic_raw
 annotations_path: dataset/synthetic_annotations.json
